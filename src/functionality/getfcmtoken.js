@@ -1,18 +1,28 @@
-import {fire, db} from '../credentials/firebase'
+import { db, messaging } from "../credentials/firebase";
 
-export const getfcmtoken = (app) => {
-  fire.messaging().useServiceWorker(app);
-
-                       fire.messaging().getToken().then(function(currentToken) {
-                         console.log('fcm token',currentToken)
-                         db.ref('/').set({name:"aijaz"})
-                       }).catch(function(error) {
-                           console.error('Unable to get messaging token.', error);
-                       });
-
-
-
-
-
-
+async function requestforpermision() {
+  await messaging
+    .requestPermission()
+    .then(function () {
+      getfcmtoken();
+    })
+    .catch(function (error) {
+      console.error("Unable to get permission to notify.", error);
+      alert("Your Notifications Are Disabled");
+    });
 }
+export const getfcmtoken = (user) => {
+  messaging
+    .requestPermission()
+    .then(() => {
+      return messaging.getToken();
+    })
+    .then((token) => {
+      db.ref("/fcmToken").child(user).set({ user, token });
+      console.log("Token : ", token);
+    })
+    .catch((err) => {
+      requestforpermision();
+      console.log(err);
+    });
+};
